@@ -1,11 +1,11 @@
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 def GenerateGeometricGraph(n: int, d: float, seed: int) -> tuple[np.ndarray, list[tuple[float, float]]]:
     np.random.seed(seed)
 
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
 
     edgeMatrix = np.zeros(shape=(n, n), dtype=int)
     samples_from_unit_square = [(np.random.random(), np.random.random()) for _ in np.arange(n)]
@@ -15,14 +15,13 @@ def GenerateGeometricGraph(n: int, d: float, seed: int) -> tuple[np.ndarray, lis
             if i < j:
                 if pow(px - qx, 2) + pow(py - qy, 2) <= pow(d, 2):
                     edgeMatrix[i][j] = edgeMatrix[j][i] = 1
-                    plt.plot([px, qx], [py, qy], color="red")
-                # draw line between the i'th sample and the j'th sample
+                    # plt.plot([px, qx], [py, qy], color="red")
 
-    X, Y = [u[0] for u in samples_from_unit_square], [u[1] for u in samples_from_unit_square]
-    plt.scatter(X, Y)
+    # X, Y = [u[0] for u in samples_from_unit_square], [u[1] for u in samples_from_unit_square]
+    # plt.scatter(X, Y)
 
-    ax.set_aspect('equal')
-    plt.show()
+    # ax.set_aspect('equal')
+    # plt.show()
 
     return edgeMatrix, samples_from_unit_square
 
