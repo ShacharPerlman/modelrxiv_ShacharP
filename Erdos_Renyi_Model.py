@@ -1,7 +1,6 @@
 import numpy as np
 
 
-# rework so that there is no direct iteration (remove `for` loops)
 def GenerateERGraph(n: int, p: float, seed: int) -> np.ndarray:
     np.random.seed(seed)
 
