@@ -1,0 +1,98 @@
+import sys
+import json
+import itertools
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from typing import Callable
+
+sns.set_theme(style='ticks')
+
+
+def load_data(filename):
+    runs = []
+    with open(filename) as file:
+        for line in file:
+            data = json.loads(line.replace('\n', ''))
+            for result in data:
+                runs = runs + result['repeats']
+    return runs
+
+
+args = {arg.split('=')[0].replace('--', ''): arg.split('=')[1] for arg in sys.argv[1:]}
+args['files'] = 'uURRII5b.output'
+# args['files'] = '--------.output'  # grid(s=0.4, s=0.6, resolution=3) repeats = 1000
+
+# noinspection PyTypeChecker
+data = pd.DataFrame.from_dict(
+    list(itertools.chain.from_iterable(
+        [load_data(f'/home/lab-heavy/k/mdx_pub/utils/backend/{file}') for file in args['files'].split(',')]))
+)
+
+# print(*data.items())
+
+# data = data['degree'] + data['spillover']
+# non_negative = data[data['spillover'] >= 0]
+# print(non_negative)
+
+
+# data = data[data['spillover'] >= 0]
+
+
+# restrict to a gradient of DTE to spillover where the darker the square the more prevalent the result was over all of
+# the repeats
+
+def ApplyRestrictionToData(*, key: str, predicate: Callable[[str], bool]):
+    global data
+    data = data[predicate(key)]
+
+
+def GeneratePlot(x_axis: str, y_axis: str, /, *, discrete_x: bool, discrete_y: bool):
+    g = sns.JointGrid(data=data, x=x_axis, y=y_axis, marginal_ticks=True)
+    # the y-axis represents the frequency at which spillover was achieved over all of the repeats. A value of 0.2 means that
+    # there is a 20% probability that spillover will be reached with the given parameter values.
+
+    cax = g.figure.add_axes([.725, .55, .02, .2])
+
+    g.plot_joint(sns.histplot, discrete=(discrete_x, discrete_y), cmap='light:#03012d', pmax=.8, cbar=True, cbar_ax=cax)
+    g.plot_marginals(sns.histplot, element='step', color='#03012d')
+
+    plt.show()
+
+
+# spillover
+ApplyRestrictionToData(key='spillover', predicate=lambda key: data[key] >= 0)
+# ApplyRestrictionToData(key='spillover', predicate=lambda key: data[key] < 0.5)
+
+
+# betweenness
+ApplyRestrictionToData(key='betweenness', predicate=lambda key: data[key] < 1000)
+# ApplyRestrictionToData(key='betweenness', predicate=lambda key: data[key] > 1)
+
+# eigenvector
+ApplyRestrictionToData(key='ev_cen', predicate=lambda key: data[key] < 0.000001)  # max resolution = 1e-6
+
+# s (the grid variable)
+ApplyRestrictionToData(key='s', predicate=lambda key: data[key] == 0.5)
+
+
+GeneratePlot('ev_cen', 'spillover', discrete_x=False, discrete_y=False)
+
+# data = data[data['betweenness'] < 1000]
+# print(data['betweenness'])
+# restrict the view of the values of betweenness to below 1000
+
+# data = data[data['s'] == 0.5]  # will only generate a meaningful result if there is spillover.
+# print(**data)
+
+# g = sns.JointGrid(data=data, x='betweenness', y='spillover', marginal_ticks=True)
+# # the y-axis represents the frequency at which spillover was achieved over all of the repeats. A value of 0.2 means that
+# # there is a 20% probability that spillover will be reached with the given parameter values.
+#
+#
+# cax = g.figure.add_axes([.725, .55, .02, .2])
+#
+# g.plot_joint(sns.histplot, discrete=(False, False), cmap='light:#03012d', pmax=.8, cbar=True, cbar_ax=cax)
+# g.plot_marginals(sns.histplot, element='step', color='#03012d')
+#
+# plt.show()
