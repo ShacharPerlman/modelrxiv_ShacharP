@@ -1,0 +1,91 @@
+import igraph
+
+
+def GenerateGeometricGraph(n, d, *, connected=True):
+    graph = igraph.Graph.GRG(n, d)
+
+    while not igraph.Graph.is_connected(graph) and connected:
+        graph = igraph.Graph.GRG(n, d)
+
+    ExtractDataFromGraph(graph=graph)
+
+    return graph
+
+
+def GenerateErdosRenyiGraph(n, p, *, connected=True):
+    graph = igraph.Graph.Erdos_Renyi(n, p)
+
+    while not igraph.Graph.is_connected(graph) and connected:
+        graph = igraph.Graph.Erdos_Renyi(n, p)
+
+    ExtractDataFromGraph(graph=graph)
+
+    return graph
+
+
+def ExtractDataFromGraph(graph: igraph.Graph) -> None:
+    """
+------------------------------------------------------------------------------------------------------------------------
+degree - The number of edges to and from a node. Higher values mean that the node is more central.
+
+eigenvector centrality - Measures the transitive influence of nodes. A high eigenvector score means that a node is
+connected to many nodes who themselves have high scores.
+
+betweenness - The amount of influence a node has over the flow of information in a graph. Each node receives a
+score, based on the number of shortest paths that pass through the node. Nodes that more frequently lie on
+shortest paths will have higher betweenness centrality scores.
+
+closeness - Measures the ability  to spread information efficiently through a subgraph. It measures the average farness
+(inverse distance) from a node to all other nodes. Nodes with a high closeness score have, on average, the shortest
+distances to all other nodes.
+
+2 step mean degree - The mean degree of the neighbours of the neighbours of the target. Supposed to serve as a measure
+of relative closeness to clusters and therefore locates short bridges between clusters.
+------------------------------------------------------------------------------------------------------------------------
+    """
+
+    def CalculateRelative2StepMeanDegree(G: igraph.Graph):
+        mean_degrees = []
+
+        for vertex in G.vs:
+            mean_degrees.append(sum(
+                sum((G.degree(two_step_friend) - 1) / (G.degree(one_step_friend) * G.degree(vertex))
+                    for two_step_friend in G.neighbors(one_step_friend))
+                for one_step_friend in G.neighbors(vertex)
+            ))
+        return mean_degrees
+
+    # def CalculateRelative2StepMeanDegreeForTarget(G: igraph.Graph, target):
+    #     # mean2 = 0
+    #     # for one_step_friend in G.neighbors(target):
+    #     #     mean1 = 0
+    #     #     for two_step_friend in G.neighbors(target):
+    #     #         mean1 += (G.degree(two_step_friend) - 1) / G.degree(one_step_friend)
+    #     #
+    #     #     mean2 += mean1 / G.degree(target)
+    #     return sum(
+    #         sum((G.degree(two_step_friend) - 1) / (G.degree(one_step_friend) * G.degree(target))
+    #             for two_step_friend in G.neighbors(one_step_friend))
+    #         for one_step_friend in G.neighbors(target)
+    #     )
+
+    data = {
+        'degree': [len(neighbours) for neighbours in igraph.Graph.get_adjlist(graph)],
+        'ev_cen': igraph.Graph.eigenvector_centrality(graph),
+        'betweenness': igraph.GraphBase.betweenness(graph),
+        'closeness': igraph.GraphBase.closeness(graph),
+        'relative_2_step_mean': CalculateRelative2StepMeanDegree(graph)
+    }
+
+    print(ExtractDataFromGraph.__doc__)
+    print()
+
+    for key, measure in data.items():
+        print()
+        print(key)
+        for elem in sorted(measure, reverse=True):
+            if round(elem) == round(elem, 4):
+                print(round(elem), end=', ')
+            else:
+                print(round(elem, 2), end=', ')
+        print()
